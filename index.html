@@ -1,0 +1,213 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>School Result App</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@media print {
+  @page { size: A4; margin: 10mm; }
+  body * { visibility: hidden; }
+  #result-card, #result-card * { visibility: visible; }
+  #result-card { position: absolute; left: 0; top: 0; width: 100%; }
+  .no-print { display: none !important; }
+}
+</style>
+</head>
+<body class="bg-gray-100 font-sans"><div class="container mx-auto p-4">
+  <h1 class="text-2xl font-bold mb-4 text-center">School Result App</h1>  <!-- School Name -->  <div class="mb-4 flex justify-center items-center gap-2">
+    <input type="text" id="schoolName" class="border px-2 py-1 rounded w-64" placeholder="School Name">
+    <button id="saveSchool" class="bg-green-600 text-white px-3 py-1 rounded">Save</button>
+  </div>  <!-- Tabs -->  <div class="flex justify-center gap-2 mb-4 no-print">
+    <button class="tab-btn bg-blue-500 text-white px-3 py-1 rounded" data-tab="dashboard">Dashboard</button>
+    <button class="tab-btn bg-blue-500 text-white px-3 py-1 rounded" data-tab="students">Students</button>
+    <button class="tab-btn bg-blue-500 text-white px-3 py-1 rounded" data-tab="teachers">Teachers</button>
+    <button class="tab-btn bg-blue-500 text-white px-3 py-1 rounded" data-tab="results">Results</button>
+    <button class="tab-btn bg-blue-500 text-white px-3 py-1 rounded" data-tab="check">Check Result</button>
+    <button class="tab-btn bg-red-600 text-white px-3 py-1 rounded" data-tab="settings">Settings</button>
+  </div>  <!-- Content -->  <div id="tabContent">
+    <!-- Dashboard -->
+    <div class="tab-panel" id="dashboard">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-blue-100 p-4 rounded text-center">Total Students: <span id="totalStudents">0</span></div>
+        <div class="bg-green-100 p-4 rounded text-center">Total Teachers: <span id="totalTeachers">0</span></div>
+        <div class="bg-purple-100 p-4 rounded text-center">Classes Active: 6</div>
+      </div>
+    </div><!-- Students -->
+<div class="tab-panel hidden" id="students">
+  <h2 class="font-bold mb-2">Add Student</h2>
+  <input type="text" id="studentName" placeholder="Name" class="border p-1 rounded mb-1 w-full">
+  <input type="text" id="fatherName" placeholder="Father Name" class="border p-1 rounded mb-1 w-full">
+  <input type="text" id="className" placeholder="Class" class="border p-1 rounded mb-1 w-full">
+  <input type="text" id="rollNo" placeholder="Roll No" class="border p-1 rounded mb-1 w-full">
+  <button id="addStudent" class="bg-blue-600 text-white px-3 py-1 rounded mb-2">Add Student</button>
+  <h3 class="font-bold mt-2">Students List</h3>
+  <ul id="studentList" class="border p-2 rounded max-h-40 overflow-auto"></ul>
+</div>
+
+<!-- Teachers -->
+<div class="tab-panel hidden" id="teachers">
+  <h2 class="font-bold mb-2">Add Teacher</h2>
+  <input type="text" id="teacherName" placeholder="Name" class="border p-1 rounded mb-1 w-full">
+  <input type="text" id="designation" placeholder="Designation" class="border p-1 rounded mb-1 w-full">
+  <button id="addTeacher" class="bg-green-600 text-white px-3 py-1 rounded mb-2">Add Teacher</button>
+  <h3 class="font-bold mt-2">Teachers List</h3>
+  <ul id="teacherList" class="border p-2 rounded max-h-40 overflow-auto"></ul>
+</div>
+
+<!-- Results -->
+<div class="tab-panel hidden" id="results">
+  <h2 class="font-bold mb-2">Add Result</h2>
+  <select id="selectStudent" class="border p-1 rounded mb-1 w-full"><option value="">--Select Student--</option></select>
+  <div id="marksInputs" class="grid grid-cols-1 md:grid-cols-2 gap-1 mb-2"></div>
+  <button id="saveResult" class="bg-purple-600 text-white px-3 py-1 rounded">Save Result</button>
+</div>
+
+<!-- Check Result -->
+<div class="tab-panel hidden" id="check">
+  <h2 class="font-bold mb-2">Check Result</h2>
+  <select id="searchStudentClass" class="border p-1 rounded mb-1 w-full"><option value="">Select Class</option></select>
+  <input type="text" id="searchRoll" placeholder="Roll No" class="border p-1 rounded mb-1 w-full">
+  <button id="checkBtn" class="bg-blue-600 text-white px-3 py-1 rounded mb-2">Show Result</button>
+  <div id="result-card" class="p-4 bg-white rounded border mt-2"></div>
+</div>
+
+<!-- Settings -->
+<div class="tab-panel hidden" id="settings">
+  <h2 class="font-bold mb-2 text-red-700">Settings</h2>
+  <button id="clearData" class="bg-red-600 text-white px-3 py-1 rounded">Clear All Data</button>
+</div>
+
+  </div>
+</div><script>
+const CLASSES = ['ECCE','Kachi','1','2','3','4','5'];
+const SUBJECTS = ['Islamiat','Urdu','English','Mathematics','G.K/Science','Social Studies'];
+
+// Load & Save Data
+let students = JSON.parse(localStorage.getItem('students')) || [];
+let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
+let results = JSON.parse(localStorage.getItem('results')) || [];
+let schoolName = localStorage.getItem('schoolName') || '';
+
+document.getElementById('schoolName').value = schoolName;
+
+document.getElementById('saveSchool').onclick = ()=>{
+  schoolName = document.getElementById('schoolName').value;
+  localStorage.setItem('schoolName', schoolName);
+  alert('School Name Saved');
+};
+
+// Tab Navigation
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.add('hidden'));
+    document.getElementById(btn.dataset.tab).classList.remove('hidden');
+  };
+});
+
+// Utility Functions
+function saveData(){
+  localStorage.setItem('students', JSON.stringify(students));
+  localStorage.setItem('teachers', JSON.stringify(teachers));
+  localStorage.setItem('results', JSON.stringify(results));
+  renderAll();
+}
+
+function renderAll(){
+  document.getElementById('totalStudents').innerText = students.length;
+  document.getElementById('totalTeachers').innerText = teachers.length;
+
+  // Students list
+  const studentList = document.getElementById('studentList'); studentList.innerHTML = '';
+  students.forEach(s=>{ let li = document.createElement('li'); li.innerText = `${s.rollNo} - ${s.name} (Class ${s.className})`; studentList.appendChild(li);});
+
+  // Teachers list
+  const teacherList = document.getElementById('teacherList'); teacherList.innerHTML = '';
+  teachers.forEach(t=>{ let li = document.createElement('li'); li.innerText = `${t.name} - ${t.designation}`; teacherList.appendChild(li);});
+
+  // Students dropdown
+  const sel = document.getElementById('selectStudent'); sel.innerHTML = '<option value="">--Select Student--</option>';
+  students.forEach(s=>{ let o = document.createElement('option'); o.value = s.rollNo; o.innerText = `${s.name} (Class ${s.className}, Roll ${s.rollNo})`; sel.appendChild(o);});
+
+  // Search dropdown
+  const searchSel = document.getElementById('searchStudentClass'); searchSel.innerHTML = '<option value="">Select Class</option>';
+  CLASSES.forEach(c=>{ let o = document.createElement('option'); o.value=c;o.innerText=c;searchSel.appendChild(o);});
+}
+
+renderAll();
+
+// Add Student
+document.getElementById('addStudent').onclick = ()=>{
+  const name = document.getElementById('studentName').value;
+  const father = document.getElementById('fatherName').value;
+  const className = document.getElementById('className').value;
+  const roll = document.getElementById('rollNo').value;
+  if(!name||!roll){ alert('Name & Roll required'); return;}
+  students.push({name,father,className,rollNo:roll}); saveData();
+  document.getElementById('studentName').value=''; document.getElementById('fatherName').value=''; document.getElementById('className').value=''; document.getElementById('rollNo').value='';
+};
+
+// Add Teacher
+document.getElementById('addTeacher').onclick = ()=>{
+  const name = document.getElementById('teacherName').value;
+  const des = document.getElementById('designation').value;
+  if(!name){ alert('Name required'); return;}
+  teachers.push({name,designation:des}); saveData();
+  document.getElementById('teacherName').value=''; document.getElementById('designation').value='';
+};
+
+// Result Entry Inputs
+const marksInputs = document.getElementById('marksInputs');
+function renderMarksInputs(){
+  marksInputs.innerHTML='';
+  SUBJECTS.forEach(s=>{
+    let div = document.createElement('div');
+    div.innerHTML = `<label class='text-sm'>${s}</label><input type='number' max='100' class='border p-1 rounded w-full' data-sub='${s}'>`;
+    marksInputs.appendChild(div);
+  });
+}
+
+document.getElementById('selectStudent').onchange = ()=>{ renderMarksInputs(); };
+
+// Save Result
+document.getElementById('saveResult').onclick = ()=>{
+  const studentRoll = document.getElementById('selectStudent').value;
+  if(!studentRoll){ alert('Select student'); return;}
+  let marks = {};
+  marksInputs.querySelectorAll('input').forEach(inp=>{ marks[inp.dataset.sub] = parseInt(inp.value)||0; });
+  let exist = results.find(r=>r.rollNo==studentRoll);
+  if(exist){ exist.marks=marks;} else{ results.push({rollNo:studentRoll,marks});}
+  saveData(); alert('Result saved');
+};
+
+// Check Result
+document.getElementById('checkBtn').onclick = ()=>{
+  const className = document.getElementById('searchStudentClass').value;
+  const rollNo = document.getElementById('searchRoll').value;
+  const student = students.find(s=>s.rollNo==rollNo && s.className==className);
+  const card = document.getElementById('result-card');
+  if(!student){ card.innerHTML='Student not found'; return;}
+  const res = results.find(r=>r.rollNo==rollNo);
+  if(!res){ card.innerHTML='Result not entered'; return;}
+  // Calculate
+  let obtained = 0; SUBJECTS.forEach(s=>obtained+=res.marks[s]||0);
+  const totalMax = SUBJECTS.length*100;
+  const perc = (obtained/totalMax*100).toFixed(2);
+  let grade='F'; if(perc>=80) grade='A+'; else if(perc>=70) grade='A'; else if(perc>=60) grade='B'; else if(perc>=50) grade='C'; else if(perc>=40) grade='D';
+  // Render
+  let html=`<h3 class='font-bold text-lg mb-2'>Result Card</h3><p><strong>Name:</strong> ${student.name}</p><p><strong>Father:</strong> ${student.father}</p><p><strong>Class:</strong> ${student.className} Roll:${student.rollNo}</p><table class='w-full border mt-2'><tr><th class='border p-1'>Subject</th><th class='border p-1'>Marks</th></tr>`;
+  SUBJECTS.forEach(s=>{ html+=`<tr><td class='border p-1'>${s}</td><td class='border p-1'>${res.marks[s]}</td></tr>`;});
+  html+=`<tr class='font-bold'><td class='border p-1'>Total</td><td class='border p-1'>${obtained}/${totalMax}</td></tr></table>`;
+  html+=`<p class='mt-2 font-bold'>Percentage: ${perc}% | Grade: ${grade}</p><button onclick='window.print()' class='bg-green-600 text-white px-2 py-1 rounded mt-2 no-print'>Print / PDF</button>`;
+  card.innerHTML=html;
+};
+
+// Clear Data
+document.getElementById('clearData').onclick = ()=>{
+  if(confirm('Are you sure? All data will be deleted')){
+    localStorage.clear(); students=[]; teachers=[]; results=[]; renderAll(); alert('Data cleared');
+  }
+};
+
+</script></body>
+</html>
